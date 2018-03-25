@@ -20,13 +20,13 @@ var Service = function(params) {
 
   var pluginCfg = lodash.get(params, ['sandboxConfig'], {});
 
-  var _rpcCoupling = {};
+  var _rpcWorkers = {};
   lodash.forOwn(pluginCfg.rpcWorkers, function(rpcInfo, rpcName) {
     if (rpcInfo && lodash.isObject(rpcInfo.connection) && 
         !lodash.isEmpty(rpcInfo.connection) && rpcInfo.enabled != false) {
       var rpcWorker = new opflow.RpcWorker(rpcInfo.connection);
       var rpcBinder = new Propagator({ LX, LT, rpcWorker });
-      _rpcCoupling[rpcName] = {
+      _rpcWorkers[rpcName] = {
         binder: rpcBinder,
         worker: rpcWorker
       }
@@ -61,21 +61,18 @@ var Service = function(params) {
     }
   });
 
-  Object.defineProperties(self, {
-    coupling: {
-      get: function() { return _rpcCoupling },
-      set: function(val) {}
-    }
-  });
+  self.get = function(rpcName) {
+    return _rpcWorkers[rpcName];
+  }
 
   self.start = function() {
-    return Promise.mapSeries(lodash.values(_rpcCoupling), function(coupling) {
+    return Promise.mapSeries(lodash.values(_rpcWorkers), function(coupling) {
       return coupling.worker.ready().then(coupling.binder.process);
     });
   };
 
   self.stop = function() {
-    return Promise.mapSeries(lodash.values(_rpcCoupling), function(coupling) {
+    return Promise.mapSeries(lodash.values(_rpcWorkers), function(coupling) {
       return coupling.worker.close();
     });
   };

@@ -30,7 +30,6 @@ var Propagator = function(params) {
       LX.isEnabledFor('info') && LX.log('info', routineTrail.toMessage({
         text: 'processor() has completed successfully'
       }));
-      console.log('XXXXXXXXXXX', output);
       return Promise.resolve('done');
     }).catch(function(error) {
       error = error || {};
