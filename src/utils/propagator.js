@@ -1,6 +1,7 @@
 'use strict';
 
 var Promise = Devebot.require('bluebird');
+var lodash = Devebot.require('lodash');
 var logolite = Devebot.require('logolite');
 var LogTracer = logolite.LogTracer;
 
@@ -19,15 +20,20 @@ var Propagator = function(params) {
 
   let processor = function(body, headers, response) {
     let routineId = getRoutineId(headers);
-    let routineTrail = propagatorTrail.branch({ key:'routineId', value:routineId});
+    let routineTrail = propagatorTrail.branch({ key:'routineId', value:routineId });
     let routine = routineDef[routineId];
     if (!routine) return Promise.resolve('next');
-    let args = JSON.parse(body);
-    response.emitStarted();
-    let promise = Promise.resolve(routine.handler.apply(routine.context, args));
-    return promise.then(function(output) {
+    let requestId = getRequestId(headers);
+    let reqTr = routineTrail.branch({ key:'requestId', value:requestId });
+    return Promise.resolve().then(function() {
+      response.emitStarted();
+      let args = JSON.parse(body);
+      args = lodash.isArray(args) ? args : [ args ];
+      args.push({ requestId: requestId });
+      return routine.handler.apply(routine.context, args);
+    }).then(function(output) {
       response.emitCompleted(output);
-      LX.isEnabledFor('info') && LX.log('info', routineTrail.toMessage({
+      LX.isEnabledFor('info') && LX.log('info', reqTr.toMessage({
         text: 'processor() has completed successfully'
       }));
       return Promise.resolve('done');
@@ -39,12 +45,12 @@ var Propagator = function(params) {
         errorClass: error.name,
         errorStack: error.stack
       });
-      LX.isEnabledFor('info') && LX.log('info', routineTrail.toMessage({
+      LX.isEnabledFor('info') && LX.log('info', reqTr.toMessage({
         text: 'processor() has failed'
       }));
       return Promise.resolve('done');
     }).finally(function() {
-      LX.isEnabledFor('info') && LX.log('info', routineTrail.toMessage({
+      LX.isEnabledFor('info') && LX.log('info', reqTr.toMessage({
         text: 'processor() has finished'
       }));
     })
@@ -81,6 +87,11 @@ let getHeaderField = function(headers, fieldName, uuidIfNotFound, defVal) {
     return (uuidIfNotFound) ? LogTracer.getLogID() : defVal;
   }
   return headers[fieldName];
+}
+
+let getRequestId = function(headers, uuidIfNotFound) {
+  if (typeof(uuidIfNotFound) == 'undefined') uuidIfNotFound = true;
+  return getHeaderField(headers, 'requestId', uuidIfNotFound);
 }
 
 let getRoutineId = function(headers, uuidIfNotFound) {

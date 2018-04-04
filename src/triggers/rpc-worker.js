@@ -21,45 +21,49 @@ var Service = function(params) {
   var pluginCfg = lodash.get(params, ['sandboxConfig'], {});
 
   var _rpcWorkers = {};
-  lodash.forOwn(pluginCfg.rpcWorkers, function(rpcInfo, rpcName) {
-    if (rpcInfo && lodash.isObject(rpcInfo.connection) && 
-        !lodash.isEmpty(rpcInfo.connection) && rpcInfo.enabled != false) {
-      var rpcWorker = new opflow.RpcWorker(rpcInfo.connection);
-      var rpcBinder = new Propagator({ LX, LT, rpcWorker });
-      _rpcWorkers[rpcName] = {
-        binder: rpcBinder,
-        worker: rpcWorker
-      }
-      if (lodash.isObject(rpcInfo.mappings)) {
-        lodash.forOwn(rpcInfo.mappings, function(routineDef, routineId) {
-          LX.has('silly') && LX.log('silly', LT.add({
-            rpcName: rpcName,
-            routineId: routineId
-          }).toMessage({
-            text: ' - define routine[${routineId}] in RpcWorker[${rpcName}]'
-          }));
-          if (lodash.isString(routineDef.service)) {
-            var service = params.sandboxRegistry.lookupService(routineDef.service);
-            var methodName = routineDef.methodName || routineId;
+
+  var init = function() {
+    if (pluginCfg.enabled === false) return;
+    lodash.forOwn(pluginCfg.rpcWorkers, function(rpcInfo, rpcName) {
+      if (rpcInfo && lodash.isObject(rpcInfo.connection) && 
+          !lodash.isEmpty(rpcInfo.connection) && rpcInfo.enabled != false) {
+        var rpcWorker = new opflow.RpcWorker(rpcInfo.connection);
+        var rpcBinder = new Propagator({ LX, LT, rpcWorker });
+        _rpcWorkers[rpcName] = {
+          binder: rpcBinder,
+          worker: rpcWorker
+        }
+        if (lodash.isObject(rpcInfo.mappings)) {
+          lodash.forOwn(rpcInfo.mappings, function(routineDef, routineId) {
             LX.has('silly') && LX.log('silly', LT.add({
-              routineId: routineId,
-              serviceName: service,
-              methodName: methodName
+              rpcName: rpcName,
+              routineId: routineId
             }).toMessage({
-              text: ' - map routine[${routineId}] to method [${serviceName}.${methodName}]'
+              text: ' - define routine[${routineId}] in RpcWorker[${rpcName}]'
             }));
-            if (lodash.isObject(service)) {
-              rpcBinder.registerRoutine({
+            if (lodash.isString(routineDef.service)) {
+              var service = params.sandboxRegistry.lookupService(routineDef.service);
+              var methodName = routineDef.methodName || routineId;
+              LX.has('silly') && LX.log('silly', LT.add({
                 routineId: routineId,
-                handler: service[methodName],
-                context: service
-              });
+                serviceName: service,
+                methodName: methodName
+              }).toMessage({
+                text: ' - map routine[${routineId}] to method [${serviceName}.${methodName}]'
+              }));
+              if (lodash.isObject(service)) {
+                rpcBinder.registerRoutine({
+                  routineId: routineId,
+                  handler: service[methodName],
+                  context: service
+                });
+              }
             }
-          }
-        })
+          })
+        }
       }
-    }
-  });
+    });
+  }
 
   self.get = function(rpcName) {
     return _rpcWorkers[rpcName];
@@ -76,6 +80,8 @@ var Service = function(params) {
       return coupling.worker.close();
     });
   };
+
+  init();
 
   LX.has('silly') && LX.log('silly', LT.toMessage({
     tags: [ 'constructor-end' ],
