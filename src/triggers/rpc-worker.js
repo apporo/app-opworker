@@ -2,7 +2,8 @@
 
 var Devebot = require('devebot');
 var Promise = Devebot.require('bluebird');
-var lodash = Devebot.require('lodash')
+var chores = Devebot.require('chores');
+var lodash = Devebot.require('lodash');
 var opflow = require('opflow');
 var Propagator = require('../utils/propagator');
 
@@ -12,9 +13,11 @@ var Service = function(params) {
 
   var LX = params.loggingFactory.getLogger();
   var LT = params.loggingFactory.getTracer();
+  var packageName = params.packageName || 'app-opmaster';
+  var blockRef = chores.getBlockRef(__filename, packageName);
 
   LX.has('silly') && LX.log('silly', LT.toMessage({
-    tags: [ 'constructor-begin' ],
+    tags: [ blockRef, 'constructor-begin' ],
     text: ' + constructor begin ...'
   }));
 
@@ -28,7 +31,7 @@ var Service = function(params) {
       if (rpcInfo && lodash.isObject(rpcInfo.connection) && 
           !lodash.isEmpty(rpcInfo.connection) && rpcInfo.enabled != false) {
         var rpcWorker = new opflow.RpcWorker(rpcInfo.connection);
-        var rpcBinder = new Propagator({ LX, LT, rpcWorker });
+        var rpcBinder = new Propagator({ packageName, LX, LT, rpcWorker });
         _rpcWorkers[rpcName] = {
           binder: rpcBinder,
           worker: rpcWorker
@@ -84,7 +87,7 @@ var Service = function(params) {
   init();
 
   LX.has('silly') && LX.log('silly', LT.toMessage({
-    tags: [ 'constructor-end' ],
+    tags: [ blockRef, 'constructor-end' ],
     text: ' - constructor end!'
   }));
 };

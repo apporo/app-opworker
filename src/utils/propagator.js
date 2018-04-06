@@ -1,20 +1,24 @@
 'use strict';
 
 var Promise = Devebot.require('bluebird');
+var chores = Devebot.require('chores');
 var lodash = Devebot.require('lodash');
 var logolite = Devebot.require('logolite');
 var LogTracer = logolite.LogTracer;
 
 var Propagator = function(params) {
   let self = this;
-  let {rpcWorker, LX, LT} = params;
+  let {packageName, rpcWorker, LX, LT} = params;
   let routineIds = [];
   let routineDef = {};
 
   let propagatorId = params.propagatorId || LogTracer.getLogID();
   let propagatorTrail = LT.branch({ key:'propagatorId', value:propagatorId });
 
-  LX.isEnabledFor('info') && LX.log('info', propagatorTrail.toMessage({
+  var blockRef = chores.getBlockRef(__filename, packageName);
+
+  LX.has('info') && LX.log('info', propagatorTrail.toMessage({
+    tags: [ blockRef, 'constructor-begin' ],
     text: 'Propagator.new()'
   }));
 
@@ -33,7 +37,7 @@ var Propagator = function(params) {
       return routine.handler.apply(routine.context, args);
     }).then(function(output) {
       response.emitCompleted(output);
-      LX.isEnabledFor('info') && LX.log('info', reqTr.toMessage({
+      LX.has('info') && LX.log('info', reqTr.toMessage({
         text: 'processor() has completed successfully'
       }));
       return Promise.resolve('done');
@@ -45,12 +49,12 @@ var Propagator = function(params) {
         errorClass: error.name,
         errorStack: error.stack
       });
-      LX.isEnabledFor('info') && LX.log('info', reqTr.toMessage({
+      LX.has('info') && LX.log('info', reqTr.toMessage({
         text: 'processor() has failed'
       }));
       return Promise.resolve('done');
     }).finally(function() {
-      LX.isEnabledFor('info') && LX.log('info', reqTr.toMessage({
+      LX.has('info') && LX.log('info', reqTr.toMessage({
         text: 'processor() has finished'
       }));
     })
@@ -75,7 +79,8 @@ var Propagator = function(params) {
 
   self.rpcWorker = rpcWorker;
 
-  LX.isEnabledFor('info') && LX.log('info', propagatorTrail.toMessage({
+  LX.has('info') && LX.log('info', propagatorTrail.toMessage({
+    tags: [ blockRef, 'constructor-end' ],
     text: 'Propagator.new() end!'
   }));
 }
