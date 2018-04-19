@@ -22,6 +22,7 @@ var Service = function(params) {
   }));
 
   var pluginCfg = lodash.get(params, ['sandboxConfig'], {});
+  var sandboxRegistry = params["devebot/sandboxRegistry"];
 
   var _rpcWorkers = {};
 
@@ -45,7 +46,7 @@ var Service = function(params) {
               text: ' - define routine[${routineId}] in RpcWorker[${rpcName}]'
             }));
             if (lodash.isString(routineDef.service)) {
-              var service = params.sandboxRegistry.lookupService(routineDef.service);
+              var service = sandboxRegistry.lookupService(routineDef.service);
               var methodName = routineDef.methodName || routineId;
               LX.has('silly') && LX.log('silly', LT.add({
                 routineId: routineId,
@@ -92,6 +93,6 @@ var Service = function(params) {
   }));
 };
 
-Service.referenceList = [ 'sandboxRegistry' ];
+Service.referenceList = [ "devebot/sandboxRegistry" ];
 
 module.exports = Service;
