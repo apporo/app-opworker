@@ -1,12 +1,12 @@
 'use strict';
 
-var Promise = Devebot.require('bluebird');
-var chores = Devebot.require('chores');
-var lodash = Devebot.require('lodash');
-var logolite = Devebot.require('logolite');
-var LogTracer = logolite.LogTracer;
+const Promise = Devebot.require('bluebird');
+const chores = Devebot.require('chores');
+const lodash = Devebot.require('lodash');
+const logolite = Devebot.require('logolite');
+const LogTracer = logolite.LogTracer;
 
-var Propagator = function(params) {
+function Propagator(params) {
   let self = this;
   let {packageName, rpcWorker, LX, LT} = params;
   let routineIds = [];
@@ -15,7 +15,7 @@ var Propagator = function(params) {
   let propagatorId = params.propagatorId || LogTracer.getLogID();
   let propagatorTrail = LT.branch({ key:'propagatorId', value:propagatorId });
 
-  var blockRef = chores.getBlockRef(__filename, packageName);
+  let blockRef = chores.getBlockRef(__filename, packageName);
 
   LX.has('info') && LX.log('info', propagatorTrail.toMessage({
     tags: [ blockRef, 'constructor-begin' ],
@@ -67,7 +67,7 @@ var Propagator = function(params) {
   self.registerRoutine = function(descriptor) {
     // TODO: validate descriptor here
     descriptor = descriptor || {};
-    var routineId = descriptor.routineId || descriptor.signature || descriptor.name;
+    let routineId = descriptor.routineId || descriptor.signature || descriptor.name;
     routineIds.push(routineId);
     routineDef[routineId] = {
       schema: descriptor.schema,

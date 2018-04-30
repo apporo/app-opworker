@@ -1,38 +1,38 @@
 'use strict';
 
-var Devebot = require('devebot');
-var Promise = Devebot.require('bluebird');
-var chores = Devebot.require('chores');
-var lodash = Devebot.require('lodash');
-var opflow = require('opflow');
-var Propagator = require('../utils/propagator');
+const Devebot = require('devebot');
+const Promise = Devebot.require('bluebird');
+const chores = Devebot.require('chores');
+const lodash = Devebot.require('lodash');
+const opflow = require('opflow');
+const Propagator = require('../utils/propagator');
 
-var Service = function(params) {
+function RpcWorker(params) {
   params = params || {};
-  var self = this;
+  let self = this;
 
-  var LX = params.loggingFactory.getLogger();
-  var LT = params.loggingFactory.getTracer();
-  var packageName = params.packageName || 'app-opmaster';
-  var blockRef = chores.getBlockRef(__filename, packageName);
+  let LX = params.loggingFactory.getLogger();
+  let LT = params.loggingFactory.getTracer();
+  let packageName = params.packageName || 'app-opmaster';
+  let blockRef = chores.getBlockRef(__filename, packageName);
 
   LX.has('silly') && LX.log('silly', LT.toMessage({
     tags: [ blockRef, 'constructor-begin' ],
     text: ' + constructor begin ...'
   }));
 
-  var pluginCfg = lodash.get(params, ['sandboxConfig'], {});
-  var sandboxRegistry = params["devebot/sandboxRegistry"];
+  let pluginCfg = lodash.get(params, ['sandboxConfig'], {});
+  let sandboxRegistry = params["devebot/sandboxRegistry"];
 
-  var _rpcWorkers = {};
+  let _rpcWorkers = {};
 
-  var init = function() {
+  let init = function() {
     if (pluginCfg.enabled === false) return;
     lodash.forOwn(pluginCfg.rpcWorkers, function(rpcInfo, rpcName) {
       if (rpcInfo && lodash.isObject(rpcInfo.connection) && 
           !lodash.isEmpty(rpcInfo.connection) && rpcInfo.enabled != false) {
-        var rpcWorker = new opflow.RpcWorker(rpcInfo.connection);
-        var rpcBinder = new Propagator({ packageName, LX, LT, rpcWorker });
+        let rpcWorker = new opflow.RpcWorker(rpcInfo.connection);
+        let rpcBinder = new Propagator({ packageName, LX, LT, rpcWorker });
         _rpcWorkers[rpcName] = {
           binder: rpcBinder,
           worker: rpcWorker
@@ -46,8 +46,8 @@ var Service = function(params) {
               text: ' - define routine[${routineId}] in RpcWorker[${rpcName}]'
             }));
             if (lodash.isString(routineDef.service)) {
-              var service = sandboxRegistry.lookupService(routineDef.service);
-              var methodName = routineDef.methodName || routineId;
+              let service = sandboxRegistry.lookupService(routineDef.service);
+              let methodName = routineDef.methodName || routineId;
               LX.has('silly') && LX.log('silly', LT.add({
                 routineId: routineId,
                 serviceName: service,
@@ -93,6 +93,6 @@ var Service = function(params) {
   }));
 };
 
-Service.referenceList = [ "devebot/sandboxRegistry" ];
+RpcWorker.referenceList = [ "devebot/sandboxRegistry" ];
 
-module.exports = Service;
+module.exports = RpcWorker;
