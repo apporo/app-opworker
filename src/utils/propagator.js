@@ -7,7 +7,6 @@ const logolite = Devebot.require('logolite');
 const LogTracer = logolite.LogTracer;
 
 function Propagator(params) {
-  let self = this;
   let {packageName, rpcWorker, LX, LT} = params;
   let routineIds = [];
   let routineDef = {};
@@ -60,11 +59,11 @@ function Propagator(params) {
     })
   }
 
-  self.process = function() {
+  this.process = function() {
     return rpcWorker.process(routineIds, processor);
   }
 
-  self.registerRoutine = function(descriptor) {
+  this.registerRoutine = function(descriptor) {
     // TODO: validate descriptor here
     descriptor = descriptor || {};
     let routineId = descriptor.routineId || descriptor.signature || descriptor.name;
@@ -74,10 +73,10 @@ function Propagator(params) {
       handler: descriptor.handler,
       context: descriptor.context
     }
-    return self;
+    return this;
   }
 
-  self.rpcWorker = rpcWorker;
+  this.rpcWorker = rpcWorker;
 
   LX.has('info') && LX.log('info', propagatorTrail.toMessage({
     tags: [ blockRef, 'constructor-end' ],

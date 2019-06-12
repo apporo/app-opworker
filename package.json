@@ -1,6 +1,6 @@
 {
   "name": "app-opworker",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Devebot mapping opflow-worker plugin",
   "homepage": "https://github.com/apporo/app-opworker.git",
   "author": {
@@ -31,11 +31,11 @@
     "devebot-plugin"
   ],
   "peerDependencies": {
-    "devebot": "^0.2.6"
+    "devebot": "^0.3.0"
   },
   "dependencies": {
-    "devebot": "^0.2.6",
-    "opflow": "^0.1.8"
+    "devebot": "^0.3.0",
+    "opflow": "0.1.8"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

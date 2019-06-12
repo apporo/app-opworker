@@ -9,17 +9,11 @@ const Propagator = require('../utils/propagator');
 
 function RpcWorker(params) {
   params = params || {};
-  let self = this;
 
   let LX = params.loggingFactory.getLogger();
   let LT = params.loggingFactory.getTracer();
   let packageName = params.packageName || 'app-opmaster';
   let blockRef = chores.getBlockRef(__filename, packageName);
-
-  LX.has('silly') && LX.log('silly', LT.toMessage({
-    tags: [ blockRef, 'constructor-begin' ],
-    text: ' + constructor begin ...'
-  }));
 
   let pluginCfg = lodash.get(params, ['sandboxConfig'], {});
   let sandboxRegistry = params["devebot/sandboxRegistry"];
@@ -69,28 +63,23 @@ function RpcWorker(params) {
     });
   }
 
-  self.get = function(rpcName) {
+  this.get = function(rpcName) {
     return _rpcWorkers[rpcName];
   }
 
-  self.start = function() {
+  this.start = function() {
     return Promise.mapSeries(lodash.values(_rpcWorkers), function(coupling) {
       return coupling.worker.ready().then(coupling.binder.process);
     });
   };
 
-  self.stop = function() {
+  this.stop = function() {
     return Promise.mapSeries(lodash.values(_rpcWorkers), function(coupling) {
       return coupling.worker.close();
     });
   };
 
   init();
-
-  LX.has('silly') && LX.log('silly', LT.toMessage({
-    tags: [ blockRef, 'constructor-end' ],
-    text: ' - constructor end!'
-  }));
 };
 
 RpcWorker.referenceList = [ "devebot/sandboxRegistry" ];
